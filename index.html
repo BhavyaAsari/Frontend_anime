@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>User Profile - Anime Hub</title>
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="./CSS/index.css">
+ 
+</head>
+<body>
+
+  <!-- Toast Container -->
+  <div class="toast-container">
+    <div id="successToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="toast-header bg-success text-white">
+        <strong class="me-auto">✅ Success</strong>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+      <div class="toast-body" id="successToastBody">
+        Profile updated successfully!
+      </div>
+    </div>
+    
+    <div id="errorToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="toast-header bg-danger text-white">
+        <strong class="me-auto">❌ Error</strong>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+      <div class="toast-body" id="errorToastBody">
+        Failed to update profile!
+      </div>
+    </div>
+  </div>
+
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="index.html">Anime Hub</a>
+      <div class="d-flex ms-auto gap-2">
+        <button class="btn btn-outline-light" onclick="window.location.href='index.html'">Home</button>
+        <button class="btn btn-outline-light" onclick="window.location.href='DirectMessage.html'">Chat</button>
+        <button class="btn btn-outline-light" onclick="window.location.href='Reviewrigth.html'">Write</button>
+        <button class="btn btn-outline-light" onclick="window.location.href='Review.html'">Reviews</button>
+        <button class="btn btn-outline-light" id="logoutBtn">Logout</button>
+      </div>
+    </div>
+  </nav>
+<main>
+  <!-- Jumbotron-like Profile Edit Section - HIDDEN by default -->
+  <div id="editProfileSection" class="profile-jumbotron" style="display: none;">
+    <h2>Edit Your Profile</h2>
+    <div class="row align-items-center">
+      <!-- Profile Pic Upload -->
+      <div class="col-md-4 text-center">
+        <img
+          src="https://via.placeholder.com/150?text=Profile+Pic"
+          alt="Profile Picture"
+          id="profilePicPreview"
+          class="profile-pic-preview"
+        />
+        <input type="file" accept="image/*" id="profilePicInput" name="profilePicture" class="form-control mt-2" />
+        <button type="button" class="btn btn-sm btn-primary mt-2" id="uploadPicBtn">
+          <span class="spinner-border spinner-border-sm d-none" id="uploadSpinner" role="status" aria-hidden="true"></span>
+          Upload Picture
+        </button>
+        <button type="button" class="btn btn-sm btn-danger mt-2" id="deletePicBtn">Delete Picture</button>
+      </div>
+
+      <!-- Profile Form -->
+      <div class="col-md-8">
+        <form id="profileForm">
+          <div class="mb-3 row align-items-center">
+            <label for="usernameInput" class="col-sm-3 col-form-label fw-semibold">Username:</label>
+            <div class="col-sm-9">
+              <input type="text" class="form-control" id="usernameInput" name="username" required />
+            </div>
+          </div>
+          <div class="mb-3 row align-items-center">
+            <label for="emailInput" class="col-sm-3 col-form-label fw-semibold">Email:</label>
+            <div class="col-sm-9">
+              <input type="email" class="form-control" id="emailInput" name="email" required />
+            </div>
+          </div>
+          <div class="d-flex gap-3">
+            <button type="submit" class="btn btn-success" id="saveProfileBtn">
+              <span class="spinner-border spinner-border-sm d-none" id="saveSpinner" role="status" aria-hidden="true"></span>
+              Save Profile
+            </button>
+            <button type="button" class="btn btn-secondary" onclick="hideEditProfile()">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Existing Profile Card -->
+  <div class="profile-card text-center">
+    <h2 class="mb-3 fw-bold text-primary" id="welcomeMessage">Loading...</h2>
+    <p class="lead text-secondary">
+      Explore, rate, and review your favorite anime! 🎌
+    </p>
+    <div class="mt-4">
+      <div class="text-center mb-4">
+        <img
+          src="https://via.placeholder.com/150?text=Profile+Pic"
+          alt="Profile Picture"
+          id="profilePicDisplay"
+          class="profile-pic-preview"
+          style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; border: 3px solid #0d6efd;"
+        />
+      </div>
+
+      <h4 class="mb-3 border-bottom pb-2 text-dark">User Info:</h4>
+      <ul class="list-group text-start">
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <strong>Username:</strong>
+          <span id="username" class="text-muted">Loading...</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <strong>Email:</strong>
+          <span id="userEmail" class="text-muted">Loading...</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <strong>Reviews Posted:</strong>
+          <span id="reviewsPosted" class="text-muted">Loading...</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <strong>Joined on:</strong>
+          <span id="joinedAt" class="text-muted">Loading...</span>
+        </li>
+      </ul>
+
+      <!-- Buttons container -->
+      <div class="btn-container">
+        <a href="Reviewrigth.html" class="btn btn-primary" style="min-width: 150px">
+          Write a Review
+        </a>
+         <div class="btn-container">
+        <a href="review-manager.html" class="btn btn-primary" style="min-width: 150px">
+          Edit Review
+        </a>
+        <button id="editProfileBtn" class="btn btn-outline-secondary" style="min-width: 150px">
+          Edit Profile
+        </button>
+      </div>
+      
+    </div>
+      
+  </div>
+  </main>
+ 
+ <!-- Footer -->
+  <footer class="bg-dark text-white text-center py-3 mt-5">
+    &copy; 2025 Anime Hub. All rights reserved.
+  </footer>
+
+  <script src="./Scripts/index.js">  </script>
+  <script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+  ></script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+# Ignore node_modules if using npm packages
+node_modules/
+
+# Ignore build/dist output (for tools like webpack, parcel, vite, etc.)
+dist/
+build/
+
+# Ignore logs
+*.log
+npm-debug.log*
+
+# Ignore OS-specific files
+.DS_Store        # macOS
+Thumbs.db        # Windows
+
+# Ignore dotenv (if storing secrets)
+.env
+.env.local
+
+# Ignore editor/project-specific files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Ignore cache/temp files
+.cache/
+.tmp/
+*.bak
+*.swp
+
+# Ignore generated files
+*.zip
+*.tar
+*.gz

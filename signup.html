@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign Up - Anime Hub</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    #toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1055;
+    }
+  </style>
+</head>
+<body>
+  <div class="container mt-5">
+    <h2 class="text-center mb-4">Sign Up</h2>
+    <form class="mx-auto" style="max-width: 400px;" id="signupForm">
+      <div class="mb-3">
+        <label for="username" class="form-label">Username</label>
+        <input name="username" type="text" class="form-control" id="username" required />
+      </div>
+      <div class="mb-3">
+        <label for="email" class="form-label">Email address</label>
+        <input name="email" type="email" class="form-control" id="email" required />
+      </div>
+      <div class="mb-3">
+        <label for="password" class="form-label">Password</label>
+        <input name="password" type="password" class="form-control" id="password" required />
+      </div>
+      <button type="submit" class="btn btn-primary w-100">Sign Up</button>
+      <div class="mt-2 text-center">
+        Already have an account? <a href="login.html">Login</a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container">
+    <div class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true" id="successToast">
+      <div class="d-flex">
+        <div class="toast-body">
+          🎉 Signup successful!
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    async function handleSignup(event) {
+      event.preventDefault();
+      const formData = new FormData(event.target);
+      const data = Object.fromEntries(formData.entries());
+
+      try {
+        const res = await fetch('http://localhost:3000/api/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+          credentials:"include"
+        });
+
+        const text = await res.text();
+        if (res.ok) {
+          const toastElement = document.getElementById('successToast');
+          const toast = new bootstrap.Toast(toastElement);
+          toast.show();
+
+           window.location.href='login.html'
+
+          event.target.reset();
+         
+        } else {
+          alert('❌ ' + text);
+        }
+      } catch (error) {
+        alert('Error: ' + error.message);
+      }
+    }
+
+    const signupForm = document.getElementById('signupForm');
+    signupForm.addEventListener('submit', handleSignup);
+  </script>
+</body>
+</html>
