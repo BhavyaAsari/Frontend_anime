@@ -269,27 +269,12 @@
       }
     }
 
-    // Add a server health check function
-    async function checkServerHealth() {
-      try {
-        const response = await fetch('https://animehub-server.onrender.com/api/health', {
-          method: 'GET',
-          mode: 'cors'
-        });
-        return response.ok;
-      } catch (error) {
-        console.error('🏥 Health check failed:', error.message);
-        return false;
-      }
-    }
+   
 
     // Add event listener when DOM is loaded
     document.addEventListener('DOMContentLoaded', async function() {
     
-      // Check server health on page load
-      const serverHealthy = await checkServerHealth();
-      if (!serverHealthy) {
-      }
+     
       
       const loginForm = document.getElementById('loginForm');
       if (loginForm) {
