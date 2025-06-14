@@ -3,9 +3,6 @@
 // console.log(BASE_URL); 
 const BASE_URL = 'https://animehub-server.onrender.com';
 
-
-
-
 // Get current user info from session
 let currentUser = null;
 let receiverId = null;
@@ -29,17 +26,46 @@ imageInput.accept = 'image/*';
 imageInput.style.display = 'none';
 document.body.appendChild(imageInput);
 
+// ✅ Helper function to safely handle API responses
+async function handleApiResponse(response) {
+  if (!response.ok) {
+    if (response.status === 401) {
+      window.location.href = 'login.html';
+      return null;
+    }
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+  
+  const data = await response.json();
+  
+  // Handle new response format with success/data structure
+  if (data.hasOwnProperty('success')) {
+    if (!data.success) {
+      throw new Error(data.message || 'Request failed');
+    }
+    return data.data;
+  }
+  
+  // Handle old response format for backward compatibility
+  return data;
+}
+
 // ✅ Helper function to get profile image URL
 function getProfileImageUrl(user) {
-  if (user?.profilePicture?.startsWith('http')) {
-    return user.profilePicture;
-  }
-
-  if (user?.profilePicture) {
+  if (!user) return `https://ui-avatars.com/api/?name=User&background=random&color=fff&size=40`;
+  
+  if (user.profilePicture) {
+    if (user.profilePicture.startsWith('http')) {
+      return user.profilePicture;
+    }
+    // Handle the backend's profile picture URL format
+    if (user.profilePicture.startsWith('/uploads/')) {
+      return `${BASE_URL}${user.profilePicture}`;
+    }
     return `${BASE_URL}/${user.profilePicture}`;
   }
 
-  if (user?.avatar?.startsWith('http')) {
+  if (user.avatar?.startsWith('http')) {
     return user.avatar;
   }
 
@@ -52,15 +78,11 @@ async function getCurrentUser() {
     const res = await fetch(`${BASE_URL}/api/auth/me`, {
       credentials: 'include'
     });
-    if (!res.ok) {
-      if (res.status === 401) {
-        window.location.href = 'login.html';
-        return;
-      }
-      throw new Error('Failed to get user info');
+    
+    currentUser = await handleApiResponse(res);
+    if (currentUser) {
+      console.log('Current user:', currentUser);
     }
-    currentUser = await res.json();
-    console.log('Current user:', currentUser);
   } catch (err) {
     console.error('Error getting current user:', err);
     showError('Failed to load user information');
@@ -69,12 +91,12 @@ async function getCurrentUser() {
 
 // Show error message
 function showError(message) {
-  chatBox.innerHTML = `<div class="error">${message}</div>`;
+  chatBox.innerHTML = `<div class="error" style="text-align: center; padding: 20px; color: #dc3545;">${message}</div>`;
 }
 
 // Show loading state
 function showLoading(element, message = 'Loading...') {
-  element.innerHTML = `<li class="loading">${message}</li>`;
+  element.innerHTML = `<li class="loading" style="text-align: center; padding: 10px; color: #6c757d;">${message}</li>`;
 }
 
 // Helper function to compare IDs safely
@@ -83,10 +105,10 @@ function compareIds(id1, id2) {
   return id1.toString() === id2.toString();
 }
 
-// ✅ Updated render messages to handle images
+// ✅ Updated render messages to handle images and new message format
 function renderMessages() {
   if (messages.length === 0) {
-    chatBox.innerHTML = '<div class="empty-state">No messages yet. Start the conversation!</div>';
+    chatBox.innerHTML = '<div class="empty-state" style="text-align: center; padding: 40px; color: #6c757d;">No messages yet. Start the conversation!</div>';
     return;
   }
 
@@ -110,20 +132,20 @@ function renderMessages() {
       profileImg = getProfileImageUrl(currentUser);
     } else {
       const msgUser = {
-        profilePicture: msg.profileImage || msg.profilePicture,
+        profilePicture: msg.senderProfilePic || msg.profileImage || msg.profilePicture,
         avatar: msg.avatar,
         username: senderName
       };
       profileImg = getProfileImageUrl(msgUser);
-
     }
-    console.log("url final = ",profileImg);
+    
+    console.log("Profile image URL:", profileImg);
+    
     // ✅ Handle both text and image messages
     let messageContent = '';
-    console.log("url = ",msg.imageUrl);
     if (msg.imageUrl) {
       const imageUrl = msg.imageUrl.startsWith('http') ? msg.imageUrl : `${BASE_URL}${msg.imageUrl}`;
-      messageContent = `<img src="${imageUrl}" alt="Shared image" class="shared-image" style="max-width: 200px; max-height: 200px; border-radius: 8px; margin: 5px 0;">`;
+      messageContent = `<img src="${imageUrl}" alt="Shared image" class="shared-image" style="max-width: 200px; max-height: 200px; border-radius: 8px; margin: 5px 0; cursor: pointer;" onclick="window.open('${imageUrl}', '_blank')">`;
     }
     if (msg.content) {
       messageContent += `<div>${escapeHtml(msg.content)}</div>`;
@@ -131,12 +153,12 @@ function renderMessages() {
     
     div.innerHTML = `
       <div class="msg-wrapper">
-       ${!isCurrentUser ? `<img src="${profileImg}" alt="${senderName}" class="profile-img" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(senderName)}&background=random&color=fff&size=32'" />` : ''}
+       ${!isCurrentUser ? `<img src="${profileImg}" alt="${senderName}" class="profile-img" style="width: 32px; height: 32px; border-radius: 50%; margin-right: 8px;" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(senderName)}&background=random&color=fff&size=32'" />` : ''}
 
-        <span class="msg-bubble ${isCurrentUser ? 'you' : ''}">
-          <strong>${senderName}:</strong> ${messageContent}
+        <span class="msg-bubble ${isCurrentUser ? 'you' : ''}" style="display: inline-block; padding: 8px 12px; border-radius: 18px; max-width: 70%; word-wrap: break-word; ${isCurrentUser ? 'background-color: #007bff; color: white;' : 'background-color: #f1f1f1; color: black;'}">
+          ${!isCurrentUser ? `<strong>${senderName}:</strong> ` : ''}${messageContent}
         </span>
-        ${isCurrentUser ? `<img src="${profileImg}" alt="You" class="profile-img" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.username)}&background=random&color=fff&size=32'">` : ''}
+        ${isCurrentUser ? `<img src="${profileImg}" alt="You" class="profile-img" style="width: 32px; height: 32px; border-radius: 50%; margin-left: 8px;" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.username)}&background=random&color=fff&size=32'">` : ''}
       </div>
     `;
     chatBox.appendChild(div);
@@ -151,16 +173,17 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-// ✅ Updated chat list rendering
+// ✅ Updated chat list rendering with new response format
 function renderChatList(chats) {
-  if (chats.length === 0) {
+  if (!chats || chats.length === 0) {
     chatListEl.innerHTML = '<li class="list-group-item text-center text-muted">No chats yet</li>';
     return;
   }
 
   chatListEl.innerHTML = '';
   chats.forEach(chat => {
-    const otherUser = chat.members.find(m => !compareIds(m._id, currentUser._id));
+    // Handle both old and new response formats
+    const otherUser = chat.otherUser || chat.members?.find(m => !compareIds(m._id, currentUser._id));
     if (!otherUser) return;
 
     const li = document.createElement('li');
@@ -169,22 +192,23 @@ function renderChatList(chats) {
     const profileImg = getProfileImageUrl(otherUser);
    
     li.innerHTML = `
-      <div class="user-item">
-        <img src="${profileImg}" class="profile-img" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(otherUser.username)}&background=random&color=fff&size=40'">
-        <div class="user-info">
-          <p class="username">${otherUser.username}</p>
-          <p class="last-message">${chat.lastMessage ? (chat.lastMessage.content.length > 30 ? chat.lastMessage.content.substring(0, 30) + '...' : chat.lastMessage.content) : 'No messages yet'}</p>
+      <div class="user-item" style="display: flex; align-items: center; padding: 12px;">
+        <img src="${profileImg}" class="profile-img" style="width: 40px; height: 40px; border-radius: 50%; margin-right: 12px;" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(otherUser.username)}&background=random&color=fff&size=40'">
+        <div class="user-info" style="flex: 1; min-width: 0;">
+          <p class="username" style="margin: 0; font-weight: 500; color: #333;">${otherUser.username}</p>
+          <p class="last-message" style="margin: 0; font-size: 0.9em; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${chat.lastMessage?.content ? (chat.lastMessage.content.length > 30 ? chat.lastMessage.content.substring(0, 30) + '...' : chat.lastMessage.content) : 'No messages yet'}</p>
         </div>
       </div>
     `;
     
     li.title = `Chat with ${otherUser.username}`;
+    li.style.cursor = 'pointer';
     li.addEventListener('click', () => openChat(chat, otherUser));
     chatListEl.appendChild(li);
   });
 }
 
-// Load chat list from backend
+// ✅ Updated load chat list with new response format
 async function loadChatList() {
   try {
     showLoading(chatListEl, 'Loading your chats...');
@@ -193,45 +217,41 @@ async function loadChatList() {
       method: 'GET'
     });
     
-    if (!res.ok) {
-      if (res.status === 401) {
-        window.location.href = 'login.html';
-        return;
-      }
-      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    const chats = await handleApiResponse(res);
+    if (chats) {
+      console.log('Loaded chats:', chats);
+      renderChatList(chats);
     }
-    
-    const chats = await res.json();
-    console.log('Loaded chats:', chats);
-    renderChatList(chats);
   } catch (err) {
     console.error('Error loading chat list:', err);
     chatListEl.innerHTML = '<li class="list-group-item text-danger">Failed to load chats</li>';
   }
 }
 
-// ✅ Updated message loading to handle images
+// ✅ Updated message loading with new response format
 async function loadMessages(chatId) {
   try {
-    const res = await fetch(`${BASE_URL}/api/messages/chat/${chatId}`, {
+    const res = await fetch(`${BASE_URL}/api/one-on-one/${chatId}/messages`, {
       credentials: 'include'
     });
     
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-    }
+    const data = await handleApiResponse(res);
+    if (!data) return;
     
-    const msgs = await res.json();
+    // Handle new response format
+    const msgs = data.messages || data;
+    
     messages.length = 0;
     messages.push(...msgs.map(m => ({
-      senderId: m.sender._id,
-      senderName: m.sender.username,
-      username: m.sender.username,
-      profileImage: m.sender.profilePicture,
-      profilePicture: m.sender.profilePicture,
-      avatar: m.sender.avatar,
+      senderId: m.sender?._id || m.senderId,
+      senderName: m.sender?.username || m.senderName,
+      username: m.sender?.username || m.username,
+      profileImage: m.sender?.profilePicture || m.profileImage,
+      profilePicture: m.sender?.profilePicture || m.profilePicture,
+      senderProfilePic: m.senderProfilePic,
+      avatar: m.sender?.avatar || m.avatar,
       content: m.content,
-      imageUrl: m.imageUrl // ✅ Include image URL
+      imageUrl: m.imageUrl
     })));
     renderMessages();
   } catch (err) {
@@ -240,7 +260,7 @@ async function loadMessages(chatId) {
   }
 }
 
-// Open or start a chat from chat list or search result
+// ✅ Updated open chat with new response format
 async function openChat(chat, otherUser) {
   chatId = chat._id;
   receiverId = otherUser._id;
@@ -264,7 +284,7 @@ async function openChat(chat, otherUser) {
   searchInput.value = '';
 }
 
-// ✅ Search functionality
+// ✅ Updated search functionality
 let searchTimeout;
 searchInput.addEventListener('input', async () => {
   clearTimeout(searchTimeout);
@@ -281,11 +301,9 @@ searchInput.addEventListener('input', async () => {
         credentials: 'include'
       });
       
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-      }
+      const users = await handleApiResponse(res);
+      if (!users) return;
       
-      const users = await res.json();
       resultsList.innerHTML = '';
 
       if (users.length === 0) {
@@ -298,15 +316,16 @@ searchInput.addEventListener('input', async () => {
 
         const li = document.createElement('li');
         li.className = 'list-group-item list-group-item-action p-0';
+        li.style.cursor = 'pointer';
         
         const profileImg = getProfileImageUrl(user);
  
         li.innerHTML = `
-          <div class="user-item">
-            <img src="${profileImg}" alt="${user.username}" class="profile-img" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(user.username)}&background=random&color=fff&size=40'">
-            <div class="user-info">
-              <p class="username">${user.username}</p>
-              <p class="last-message">Click to start chatting</p>
+          <div class="user-item" style="display: flex; align-items: center; padding: 12px;">
+            <img src="${profileImg}" alt="${user.username}" class="profile-img" style="width: 40px; height: 40px; border-radius: 50%; margin-right: 12px;" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(user.username)}&background=random&color=fff&size=40'">
+            <div class="user-info" style="flex: 1;">
+              <p class="username" style="margin: 0; font-weight: 500; color: #333;">${user.username}</p>
+              <p class="last-message" style="margin: 0; font-size: 0.9em; color: #666;">Click to start chatting</p>
             </div>
           </div>
         `;
@@ -324,14 +343,11 @@ searchInput.addEventListener('input', async () => {
               body: JSON.stringify({ otherUserId: user._id })
             });
             
-            if (!chatRes.ok) {
-              throw new Error(`HTTP ${chatRes.status}: ${chatRes.statusText}`);
+            const chat = await handleApiResponse(chatRes);
+            if (chat) {
+              await openChat(chat, user);
+              loadChatList();
             }
-            
-            const chat = await chatRes.json();
-            await openChat(chat, user);
-            
-            loadChatList();
           } catch (err) {
             console.error('Error starting chat:', err);
             resultsList.innerHTML = '<li class="list-group-item text-danger">Failed to start chat</li>';
@@ -349,64 +365,82 @@ searchInput.addEventListener('input', async () => {
 
 // ✅ Add image upload button to chat form
 function addImageUploadButton() {
+  // Check if button already exists
+  if (document.querySelector('.image-upload-btn')) return;
+  
   const imageBtn = document.createElement('button');
   imageBtn.type = 'button';
   imageBtn.innerHTML = '📷';
   imageBtn.title = 'Upload Image';
-  imageBtn.className = 'btn btn-outline-secondary';
+  imageBtn.className = 'btn btn-outline-secondary image-upload-btn';
+  imageBtn.style.marginRight = '8px';
   imageBtn.addEventListener('click', () => imageInput.click());
   
   // Insert before the send button
   const sendBtn = chatForm.querySelector('button[type="submit"]');
-  chatForm.insertBefore(imageBtn, sendBtn);
+  if (sendBtn) {
+    chatForm.insertBefore(imageBtn, sendBtn);
+  }
 }
 
-// ✅ Updated message sending with image support
+// ✅ Updated message sending with new response format
 async function sendMessage(content = '', imageFile = null) {
   if ((!content.trim() && !imageFile) || !chatId || !currentUser) return;
 
-  const formData = new FormData();
-  formData.append('chat', chatId);
-  formData.append('chatModel', 'DirectMessage');
-  
-  if (content.trim()) {
-    formData.append('content', content);
-  }
-  
-  if (imageFile) {
-    formData.append('image', imageFile);
-  }
-
   // Disable form while sending
   const submitBtn = chatForm.querySelector('button[type="submit"]');
-  const originalText = submitBtn.textContent;
-  submitBtn.textContent = 'Sending...';
-  submitBtn.disabled = true;
+  const originalText = submitBtn?.textContent || 'Send';
+  if (submitBtn) {
+    submitBtn.textContent = 'Sending...';
+    submitBtn.disabled = true;
+  }
   messageInput.disabled = true;
 
   try {
-    const res = await fetch(`${BASE_URL}/api/messages`, {
-      method: 'POST',
-      credentials: 'include',
-      body: formData, // ✅ Use FormData for file upload
-    });
+    let res, savedMsg;
+    
+    if (imageFile) {
+      // Handle image upload
+      const formData = new FormData();
+      formData.append('chat', chatId);
+      formData.append('chatModel', 'DirectMessage');
+      formData.append('image', imageFile);
+      if (content.trim()) {
+        formData.append('content', content.trim());
+      }
 
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      res = await fetch(`${BASE_URL}/api/messages`, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      });
+    } else {
+      // Handle text message
+      res = await fetch(`${BASE_URL}/api/one-on-one/${chatId}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ content: content.trim() }),
+      });
     }
 
-    const savedMsg = await res.json();
-    messages.push({
+    savedMsg = await handleApiResponse(res);
+    if (!savedMsg) return;
+
+    // Add message to local array
+    const newMessage = {
       senderId: currentUser._id,
       senderName: currentUser.username,
       username: currentUser.username,
       profileImage: currentUser.profilePicture,
       profilePicture: currentUser.profilePicture,
+      senderProfilePic: currentUser.profilePicture,
       avatar: currentUser.avatar,
       content: savedMsg.content,
-      imageUrl: savedMsg.imageUrl, // ✅ Include image URL
-    });
+      imageUrl: savedMsg.imageUrl,
+    };
     
+    messages.push(newMessage);
     renderMessages();
     messageInput.value = '';
 
@@ -414,7 +448,7 @@ async function sendMessage(content = '', imageFile = null) {
     socket.emit('sendMessage', { 
       chatId, 
       content: savedMsg.content,
-      imageUrl: savedMsg.imageUrl, // ✅ Include image URL
+      imageUrl: savedMsg.imageUrl,
       senderId: currentUser._id, 
       senderName: currentUser.username,
       username: currentUser.username,
@@ -427,8 +461,10 @@ async function sendMessage(content = '', imageFile = null) {
     alert('Failed to send message. Please try again.');
   } finally {
     // Re-enable form
-    submitBtn.textContent = originalText;
-    submitBtn.disabled = false;
+    if (submitBtn) {
+      submitBtn.textContent = originalText;
+      submitBtn.disabled = false;
+    }
     messageInput.disabled = false;
     messageInput.focus();
   }
@@ -459,7 +495,9 @@ imageInput.addEventListener('change', async (e) => {
 chatForm.addEventListener('submit', async e => {
   e.preventDefault();
   const content = messageInput.value.trim();
-  await sendMessage(content);
+  if (content) {
+    await sendMessage(content);
+  }
 });
 
 // ✅ Updated socket message reception
@@ -473,9 +511,10 @@ socket.on('receiveMessage', (msg) => {
       username: msg.username || msg.senderName,
       profileImage: msg.profilePicture,
       profilePicture: msg.profilePicture,
+      senderProfilePic: msg.profilePicture,
       avatar: msg.avatar,
       content: msg.content,
-      imageUrl: msg.imageUrl // ✅ Include image URL
+      imageUrl: msg.imageUrl
     });
     renderMessages();
   }
@@ -494,7 +533,7 @@ socket.on('connect_error', (error) => {
 });
 
 // Logout functionality
-document.getElementById('logoutBtn').addEventListener('click', async () => {
+document.getElementById('logoutBtn')?.addEventListener('click', async () => {
   try {
     await fetch(`${BASE_URL}/api/auth/logout`, {
       method: 'POST',
@@ -512,7 +551,7 @@ async function init() {
   await getCurrentUser();
   if (currentUser) {
     loadChatList();
-    addImageUploadButton(); // ✅ Add image upload button
+    addImageUploadButton();
   }
 
   const storedChat = localStorage.getItem('selectedChat');
