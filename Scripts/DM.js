@@ -1,6 +1,8 @@
-import { BASE_URL } from './config';
+// import { BASE_URL } from './config';
 
-console.log(BASE_URL); 
+// console.log(BASE_URL); 
+const BASE_URL = 'https://animehub-server.onrender.com';
+
 
 
 
