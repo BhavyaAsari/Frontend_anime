@@ -214,7 +214,7 @@ function generateStars(rating) {
 // Format date to readable form
 function formatDate(dateString) {
   const options = { year: 'numeric', month: 'short', day: 'numeric' };
-  return new Date(dateString).toLocalizedString('en-US', options);
+  return new Date(dateString).toLocaleDateString('en-US', options);
 }
 
 // Escape HTML to prevent XSS
