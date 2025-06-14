@@ -163,8 +163,6 @@
 
       try {
         
-        // First, let's test if the server is reachable
-        console.log('🔍 Testing server connectivity...');
         
         const response = await fetch('https://animehub-server.onrender.com/api/auth/login', {
           method: 'POST',
@@ -183,7 +181,6 @@
 
         // Check if this is a CORS issue
         if (response.type === 'opaque') {
-          console.error('❌ CORS Issue: Opaque response received');
           showToast('errorToast', '❌ CORS Error: Server not allowing cross-origin requests');
           return;
         }
@@ -191,7 +188,6 @@
         // Try to parse response
         let responseData;
         const contentType = response.headers.get('content-type');
-        console.log('📄 Content-Type:', contentType);
         
         try {
           if (contentType && contentType.includes('application/json')) {
@@ -208,7 +204,6 @@
 
         if (response.ok) {
           // Success
-          console.log('🎉 Login successful!');
           showToast('successToast');
           
           // Small delay to show the success message before redirect
@@ -246,7 +241,6 @@
             errorMessage = '❌ ' + responseData.error;
           }
           
-          console.error('📱 Showing error:', errorMessage);
           showToast('errorToast', errorMessage);
         }
       } catch (error) {
@@ -278,15 +272,13 @@
     // Add a server health check function
     async function checkServerHealth() {
       try {
-        console.log('🏥 Checking server health...');
         const response = await fetch('https://animehub-server.onrender.com/api/health', {
           method: 'GET',
           mode: 'cors'
         });
-        console.log('🏥 Health check response:', response.status);
         return response.ok;
       } catch (error) {
-        console.log('🏥 Health check failed:', error.message);
+        console.error('🏥 Health check failed:', error.message);
         return false;
       }
     }
@@ -297,13 +289,11 @@
       // Check server health on page load
       const serverHealthy = await checkServerHealth();
       if (!serverHealthy) {
-        console.warn('⚠️ Server health check failed - there might be issues connecting');
       }
       
       const loginForm = document.getElementById('loginForm');
       if (loginForm) {
         loginForm.addEventListener('submit', handleLogin);
-        console.log('✅ Login form listener attached');
       }
       
       // Handle logout button (if user is already logged in)
@@ -311,7 +301,6 @@
       if (logoutBtn) {
         logoutBtn.addEventListener('click', function() {
           // Add logout logic here if needed
-          console.log('Logout clicked');
         });
       }
     });
