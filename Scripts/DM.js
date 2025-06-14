@@ -1,10 +1,16 @@
+import { BASE_URL } from './config';
+
+console.log(BASE_URL); 
+
+
+
 // Get current user info from session
 let currentUser = null;
 let receiverId = null;
 let chatId = null;
 const messages = [];
 
-const socket = io('http://localhost:3000', { withCredentials: true });
+const socket = io(`${BASE_URL}`, { withCredentials: true });
 
 const chatListEl = document.getElementById('chatList');
 const searchInput = document.getElementById('searchUser');
@@ -28,7 +34,7 @@ function getProfileImageUrl(user) {
   }
 
   if (user?.profilePicture) {
-    return `http://localhost:3000/${user.profilePicture}`;
+    return `${BASE_URL}/${user.profilePicture}`;
   }
 
   if (user?.avatar?.startsWith('http')) {
@@ -41,7 +47,7 @@ function getProfileImageUrl(user) {
 // Get current user info
 async function getCurrentUser() {
   try {
-    const res = await fetch('http://localhost:3000/api/auth/me', {
+    const res = await fetch(`${BASE_URL}/api/auth/me`, {
       credentials: 'include'
     });
     if (!res.ok) {
@@ -114,8 +120,8 @@ function renderMessages() {
     let messageContent = '';
     console.log("url = ",msg.imageUrl);
     if (msg.imageUrl) {
-      const imageUrl = msg.imageUrl.startsWith('http') ? msg.imageUrl : `http://localhost:3000${msg.imageUrl}`;
-      messageContent = `<img src="${profileImg}" alt="Shared image" class="shared-image" style="max-width: 200px; max-height: 200px; border-radius: 8px; margin: 5px 0;">`;
+      const imageUrl = msg.imageUrl.startsWith('http') ? msg.imageUrl : `${BASE_URL}${msg.imageUrl}`;
+      messageContent = `<img src="${imageUrl}" alt="Shared image" class="shared-image" style="max-width: 200px; max-height: 200px; border-radius: 8px; margin: 5px 0;">`;
     }
     if (msg.content) {
       messageContent += `<div>${escapeHtml(msg.content)}</div>`;
@@ -180,7 +186,7 @@ function renderChatList(chats) {
 async function loadChatList() {
   try {
     showLoading(chatListEl, 'Loading your chats...');
-    const res = await fetch('http://localhost:3000/api/one-on-one/chatlist', {
+    const res = await fetch(`${BASE_URL}/api/one-on-one/chatlist`, {
       credentials: 'include',
       method: 'GET'
     });
@@ -205,7 +211,7 @@ async function loadChatList() {
 // ✅ Updated message loading to handle images
 async function loadMessages(chatId) {
   try {
-    const res = await fetch(`http://localhost:3000/api/messages/chat/${chatId}`, {
+    const res = await fetch(`${BASE_URL}/api/messages/chat/${chatId}`, {
       credentials: 'include'
     });
     
@@ -269,7 +275,7 @@ searchInput.addEventListener('input', async () => {
     try {
       resultsList.innerHTML = '<li class="list-group-item loading">Searching...</li>';
       
-      const res = await fetch(`http://localhost:3000/api/auth/search?q=${encodeURIComponent(query)}`, {
+      const res = await fetch(`${BASE_URL}/api/auth/search?q=${encodeURIComponent(query)}`, {
         credentials: 'include'
       });
       
@@ -309,7 +315,7 @@ searchInput.addEventListener('input', async () => {
           try {
             resultsList.innerHTML = '<li class="list-group-item loading">Starting chat...</li>';
             
-            const chatRes = await fetch('http://localhost:3000/api/one-on-one/', {
+            const chatRes = await fetch(`${BASE_URL}/api/one-on-one/`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               credentials: 'include',
@@ -377,7 +383,7 @@ async function sendMessage(content = '', imageFile = null) {
   messageInput.disabled = true;
 
   try {
-    const res = await fetch('http://localhost:3000/api/messages', {
+    const res = await fetch(`${BASE_URL}/api/messages`, {
       method: 'POST',
       credentials: 'include',
       body: formData, // ✅ Use FormData for file upload
@@ -488,7 +494,7 @@ socket.on('connect_error', (error) => {
 // Logout functionality
 document.getElementById('logoutBtn').addEventListener('click', async () => {
   try {
-    await fetch('http://localhost:3000/api/auth/logout', {
+    await fetch(`${BASE_URL}/api/auth/logout`, {
       method: 'POST',
       credentials: 'include'
     });

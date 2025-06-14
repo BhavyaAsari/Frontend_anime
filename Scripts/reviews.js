@@ -1,5 +1,6 @@
+import { BASE_URL } from './config.js';
+
 let allReviews = [];
-const BASE_URL = 'http://localhost:3000';
 const reviewFullTextMap = {}; // Stores full review text safely
 const expandedReviews = new Set(); // Track which reviews are expanded
 
@@ -57,7 +58,7 @@ function displayReviews(reviews) {
   const container = document.getElementById('reviewsContainer');
   const noReviewsDiv = document.getElementById('noReviews');
 
-  container.innerContent = '';
+  container.innerHTML = '';
   if (reviews.length === 0) {
     noReviewsDiv.style.display = 'block';
     return;
@@ -213,7 +214,7 @@ function generateStars(rating) {
 // Format date to readable form
 function formatDate(dateString) {
   const options = { year: 'numeric', month: 'short', day: 'numeric' };
-  return new Date(dateString).toLocaleDateString('en-US', options);
+  return new Date(dateString).toLocalizedString('en-US', options);
 }
 
 // Escape HTML to prevent XSS

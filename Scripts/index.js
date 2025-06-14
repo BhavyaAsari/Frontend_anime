@@ -1,3 +1,9 @@
+// import { BASE_URL } from './config';
+
+// console.log('BAse:',BASE_URL);
+const BASE_URL = 'https://animehub-server.onrender.com';
+
+
 
     // Toast functions
     function showSuccessToast(message = "Profile updated successfully!") {
@@ -25,7 +31,7 @@
 
     async function fetchUserProfile() {
       try {
-        const res = await fetch("http://localhost:3000/api/auth/profile", {
+        const res = await fetch(`${BASE_URL}/api/auth/profile`, {
           credentials: "include",
         });
 
@@ -52,7 +58,7 @@
 
           // Set profile picture if user has one
           if (user.profilePicture) {
-            const profilePicUrl = `http://localhost:3000/${user.profilePicture}`;
+            const profilePicUrl = `${BASE_URL}/${user.profilePicture}`;
             document.getElementById("profilePicDisplay").src = profilePicUrl;
             document.getElementById("profilePicPreview").src = profilePicUrl;
           } else {
@@ -79,7 +85,7 @@
     // Logout logic
     document.getElementById("logoutBtn").addEventListener("click", async () => {
       try {
-        const res = await fetch("http://localhost:3000/api/auth/logout", {
+        const res = await fetch(  `${BASE_URL}/api/auth/logout`, {
           method: "POST",
           credentials: "include",
         });
@@ -126,7 +132,7 @@
         const formData = new FormData();
         formData.append("profilePicture", file);
 
-        const res = await fetch("http://localhost:3000/api/auth/upload-profile-pic", {
+        const res = await fetch(`${BASE_URL}/api/auth/upload-profile-pic`, {
           method: "POST",
           credentials: "include",
           body: formData,
@@ -137,7 +143,7 @@
           showSuccessToast("Profile picture uploaded successfully!");
           
           // Update the display image
-          const profilePicUrl = `http://localhost:3000/${result.profilePicture}`;
+          const profilePicUrl = `${BASE_URL}/${result.profilePicture}`;
           document.getElementById("profilePicDisplay").src = profilePicUrl;
           document.getElementById("profilePicPreview").src = profilePicUrl;
           
@@ -162,7 +168,7 @@
       }
 
       try {
-        const res = await fetch("http://localhost:3000/api/auth/delete-profile-pic", {
+        const res = await fetch(`${BASE_URL}/api/auth/delete-profile-pic`, {
           method: "DELETE",
           credentials: "include",
         });
@@ -195,7 +201,7 @@
         const username = document.getElementById("usernameInput").value;
         const email = document.getElementById("emailInput").value;
 
-        const res = await fetch("http://localhost:3000/api/auth/update-profile", {
+        const res = await fetch(`${BASE_URL}/api/auth/update-profile`, {
           method: "POST",
           credentials: "include",
           headers: {
