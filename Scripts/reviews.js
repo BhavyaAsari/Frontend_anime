@@ -76,18 +76,20 @@ function createReviewCard(review, container) {
   card.className = 'col-lg-4 col-md-6 mb-4';
   card.setAttribute('data-review-id', review._id);
 
-  const imageUrl = review.animeImageUrl?.trim()
-    ? `${BASE_URL}${review.animeImageUrl}`
-    : null;
+const imageUrl = review.animeImageUrl?.trim()
+  ? (review.animeImageUrl.startsWith('http') 
+      ? review.animeImageUrl 
+      : `${BASE_URL}/${review.animeImageUrl}`)
+  : null;
 
-  const imageHtml = imageUrl
-    ? `<img src="${imageUrl}" alt="${escapeHtml(review.animeTitle)}" class="anime-image" onerror="handleImageError(this)">`
-    : `<div class="placeholder-image">
-         <div>
-           <i class="fas fa-image mb-2"></i><br>
-           No Image Available
-         </div>
-       </div>`;
+const imageHtml = imageUrl
+  ? `<img src="${imageUrl}" alt="${escapeHtml(review.animeTitle)}" class="anime-image" onerror="handleImageError(this)">`
+  : `<div class="placeholder-image">
+       <div>
+         <i class="fas fa-image mb-2"></i><br>
+         No Image Available
+       </div>
+     </div>`;
 
   // Store full review text with unique key
   reviewFullTextMap[review._id] = review.reviewText;
