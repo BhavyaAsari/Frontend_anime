@@ -58,7 +58,11 @@ const BASE_URL = 'https://animehub-server.onrender.com';
 
           // Set profile picture if user has one
           if (user.profilePicture) {
-            const profilePicUrl = `${BASE_URL}/${user.profilePicture}`;
+            // Check if it's already a full URL (Cloudinary) or a relative path
+            const profilePicUrl = user.profilePicture.startsWith('http') 
+              ? user.profilePicture 
+              : `${BASE_URL}/${user.profilePicture}`;
+              
             document.getElementById("profilePicDisplay").src = profilePicUrl;
             document.getElementById("profilePicPreview").src = profilePicUrl;
           } else {
@@ -142,8 +146,11 @@ const BASE_URL = 'https://animehub-server.onrender.com';
           const result = await res.json();
           showSuccessToast("Profile picture uploaded successfully!");
           
-          // Update the display image
-          const profilePicUrl = `${BASE_URL}/${result.profilePicture}`;
+          // Update the display image - handle both relative and absolute URLs
+          const profilePicUrl = result.profilePicture.startsWith('http') 
+            ? result.profilePicture 
+            : `${BASE_URL}/${result.profilePicture}`;
+            
           document.getElementById("profilePicDisplay").src = profilePicUrl;
           document.getElementById("profilePicPreview").src = profilePicUrl;
           
