@@ -262,3 +262,5 @@ function showError(message) {
 // Auto-refresh reviews every 5 minutes (changed from 30000000 to 300000)
 setInterval(fetchReviews, 300000);
 window.handleImageError = handleImageError;
+window.toggleSpecificReview = toggleSpecificReview;
+
