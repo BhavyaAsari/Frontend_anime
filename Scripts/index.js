@@ -1,6 +1,4 @@
-// import { BASE_URL } from './config'; // ✅ Uncomment and use this
-// // Remove the hardcoded BASE_URL line below
- const BASE_URL = 'https://animehub-server.onrender.com';
+const BASE_URL = 'https://animehub-server.onrender.com';
 
 // Toast functions
 function showSuccessToast(message = "Profile updated successfully!") {
@@ -32,7 +30,6 @@ async function checkAuth() {
     }
 
     const userData = await response.json();
-    console.log('User data:', userData);
     return userData;
   } catch (error) {
     console.error('Auth check error:', error);
@@ -40,7 +37,7 @@ async function checkAuth() {
   }
 }
 
-// ✅ Fixed fetchUserProfile function
+// Fetch and display user profile
 async function fetchUserProfile() {
   try {
     const response = await fetch(`${BASE_URL}/api/auth/me`, {
@@ -51,24 +48,22 @@ async function fetchUserProfile() {
     if (!response.ok) throw new Error('Failed to fetch profile');
 
     const user = await response.json();
-    console.log('Profile data:', user);
 
-    // Populate form fields
-    document.getElementById('username').value = user.username || '';
-    document.getElementById('email').value = user.email || '';
+    // Update display
+    document.getElementById('username').textContent = user.username || '';
+    document.getElementById('userEmail').textContent = user.email || '';
+    document.getElementById('usernameInput').value = user.username || '';
+    document.getElementById('emailInput').value = user.email || '';
+    document.getElementById('reviewsPosted').textContent = user.reviewsCount || '0';
+    document.getElementById('joinedAt').textContent = new Date(user.createdAt).toLocaleDateString();
+    document.getElementById('welcomeMessage').textContent = `Welcome, ${user.username}!`;
 
-    // ✅ Fixed profile picture URL handling
     if (user.profilePicture) {
-      const profilePicUrl = user.profilePicture.startsWith('http') 
-        ? user.profilePicture 
+      const profilePicUrl = user.profilePicture.startsWith('http')
+        ? user.profilePicture
         : `${BASE_URL}/${user.profilePicture}`;
-      
-      document.getElementById('currentProfilePic').src = profilePicUrl;
-      document.getElementById('currentProfilePic').style.display = 'block';
-      document.getElementById('profilePicPlaceholder').style.display = 'none';
-    } else {
-      document.getElementById('currentProfilePic').style.display = 'none';
-      document.getElementById('profilePicPlaceholder').style.display = 'block';
+      document.getElementById('profilePicDisplay').src = profilePicUrl;
+      document.getElementById('profilePicPreview').src = profilePicUrl;
     }
 
   } catch (error) {
@@ -87,10 +82,9 @@ async function deleteProfilePicture() {
 
     if (!response.ok) throw new Error('Failed to delete profile picture');
 
-    // Hide current image and show placeholder
-    document.getElementById('currentProfilePic').style.display = 'none';
-    document.getElementById('profilePicPlaceholder').style.display = 'block';
-    
+    document.getElementById('profilePicDisplay').src = 'https://via.placeholder.com/150?text=Profile+Pic';
+    document.getElementById('profilePicPreview').src = 'https://via.placeholder.com/150?text=Profile+Pic';
+
     showSuccessToast('Profile picture deleted successfully!');
   } catch (error) {
     console.error('Error deleting profile picture:', error);
@@ -98,14 +92,14 @@ async function deleteProfilePicture() {
   }
 }
 
-// Profile form submission
+// Submit profile form
 document.getElementById('profileForm').addEventListener('submit', async (e) => {
   e.preventDefault();
 
   const formData = new FormData();
-  const username = document.getElementById('username').value.trim();
-  const email = document.getElementById('email').value.trim();
-  const profilePictureFile = document.getElementById('profilePicture').files[0];
+  const username = document.getElementById('usernameInput').value.trim();
+  const email = document.getElementById('emailInput').value.trim();
+  const profilePictureFile = document.getElementById('profilePicInput').files[0];
 
   if (!username || !email) {
     showErrorToast('Username and email are required');
@@ -116,7 +110,6 @@ document.getElementById('profileForm').addEventListener('submit', async (e) => {
   formData.append('email', email);
 
   if (profilePictureFile) {
-    // Validate file size (5MB limit)
     if (profilePictureFile.size > 5 * 1024 * 1024) {
       showErrorToast('Profile picture must be less than 5MB');
       return;
@@ -137,34 +130,24 @@ document.getElementById('profileForm').addEventListener('submit', async (e) => {
     }
 
     const result = await response.json();
-    console.log('Update result:', result);
 
-    // ✅ Fixed profile picture display after upload
     if (result.user && result.user.profilePicture) {
-      const profilePicUrl = result.user.profilePicture.startsWith('http') 
-        ? result.user.profilePicture 
+      const profilePicUrl = result.user.profilePicture.startsWith('http')
+        ? result.user.profilePicture
         : `${BASE_URL}/${result.user.profilePicture}`;
-      
-      document.getElementById('currentProfilePic').src = profilePicUrl;
-      document.getElementById('currentProfilePic').style.display = 'block';
-      document.getElementById('profilePicPlaceholder').style.display = 'none';
+      document.getElementById('profilePicDisplay').src = profilePicUrl;
+      document.getElementById('profilePicPreview').src = profilePicUrl;
     }
 
     showSuccessToast('Profile updated successfully!');
-    
-    // Clear the file input
-    document.getElementById('profilePicture').value = '';
-
+    document.getElementById('profilePicInput').value = '';
   } catch (error) {
     console.error('Error updating profile:', error);
     showErrorToast(error.message || 'Failed to update profile');
   }
 });
 
-// Add event listener for delete button
-document.getElementById('deleteProfilePicBtn').addEventListener('click', deleteProfilePicture);
-
-// Logout functionality
+// Handle logout
 document.getElementById('logoutBtn').addEventListener('click', async () => {
   try {
     const response = await fetch(`${BASE_URL}/api/auth/logout`, {
@@ -183,7 +166,19 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
   }
 });
 
-// Load profile data when page loads
+// Handle delete profile picture button
+document.getElementById('deletePicBtn').addEventListener('click', deleteProfilePicture);
+
+// Toggle profile edit view
+document.getElementById('editProfileBtn').addEventListener('click', () => {
+  document.getElementById('editProfileSection').style.display = 'block';
+});
+
+function hideEditProfile() {
+  document.getElementById('editProfileSection').style.display = 'none';
+}
+
+// Run on page load
 document.addEventListener('DOMContentLoaded', async () => {
   await checkAuth();
   await fetchUserProfile();
