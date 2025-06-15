@@ -2,7 +2,6 @@ import { BASE_URL } from './config'; // ✅ Add this import at the top
 
 console.log(BASE_URL); 
 
-
 let reviews = [];
 const reviewsContainer = document.getElementById("reviewsContainer");
 const editReviewModal = new bootstrap.Modal(document.getElementById("editReviewModal"));
@@ -31,16 +30,26 @@ function renderReviews() {
   reviews.forEach(review => {
     const card = document.createElement("div");
     card.className = "col-md-4 mb-4";
+    
+    // ✅ Fix image URL handling
+    const imageUrl = review.animeImageUrl 
+      ? (review.animeImageUrl.startsWith('http') 
+          ? review.animeImageUrl 
+          : `${BASE_URL}/${review.animeImageUrl}`)
+      : '';
+    
     card.innerHTML = `
-      <div class="card h-100">
-        ${review.animeImageUrl ? `<img src="${review.animeImageUrl}" class="card-img-top" alt="Review Image">` : ""}
-        <div class="card-body d-flex flex-column">
-          <h5 class="card-title">${review.animeTitle}</h5>
-          <p class="card-text flex-grow-1">${review.reviewText}</p>
-          <p class="card-text"><small class="text-muted">Rating: ${review.rating}</small></p>
-          <div>
-            <button class="btn btn-sm btn-outline-primary me-2" onclick="openEditForm('${review._id}')">Edit</button>
-            <button class="btn btn-sm btn-outline-danger" onclick="deleteReview('${review._id}')">Delete</button>
+      <div class="card">
+        <div class="card-body">
+          ${imageUrl ? `<img src="${imageUrl}" alt="${review.animeTitle}" class="img-fluid mb-3" style="max-height: 200px; object-fit: cover;">` : ""}
+          <div class="card-content">
+            <h5 class="card-title">${review.animeTitle}</h5>
+            <p class="card-text">${review.reviewText}</p>
+            <p class="card-text"><small class="text-muted">Rating: ${review.rating}</small></p>
+            <div class="btn-group">
+              <button class="btn btn-sm btn-outline-primary" onclick="openEditForm('${review._id}')">Edit</button>
+              <button class="btn btn-sm btn-outline-danger" onclick="deleteReview('${review._id}')">Delete</button>
+            </div>
           </div>
         </div>
       </div>
@@ -125,3 +134,65 @@ document.getElementById("editReviewForm").addEventListener("submit", async funct
 
 // Initial load
 fetchReviews();
+
+// ✅ Fixed review submission form
+document.getElementById('reviewForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const form = e.target;
+  const formData = new FormData(form); // ✅ Create FormData directly from form
+  
+  const animeTitle = formData.get('animeTitle')?.trim();
+  const reviewText = formData.get('reviewText')?.trim();
+  const ratingValue = formData.get('rating');
+  const rating = parseInt(ratingValue);
+  const animeImageFile = formData.get('animeImage');
+  const toastElement = document.getElementById('successToast');
+  
+  if (!animeTitle || !reviewText || !ratingValue || isNaN(rating) || rating < 1 || rating > 5) {
+    return alert("Please fill all fields correctly.");
+  }
+  
+  try {
+    const res = await fetch(`${BASE_URL}/api/reviews`, {
+      method: 'POST',
+      credentials: 'include',
+      body: formData // ✅ Send the FormData object directly
+    });
+    
+    if (res.ok) {
+      const toast = new bootstrap.Toast(toastElement);
+      toast.show();
+      
+      form.reset();
+      // Refresh the reviews list
+      fetchReviews();
+    } else if (res.status === 401) {
+      alert("You must be logged in to submit a review.");
+      // window.location.href = 'login.html';
+    } else {
+      const msg = await res.text();
+      alert("Error: " + msg);
+    }
+  } catch (err) {
+    console.error("Error submitting review:", err);
+    alert("Something went wrong. Please try again later.");
+  }
+});
+
+// Logout button functionality
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  try {
+    const res = await fetch(`${BASE_URL}/api/auth/logout`, {
+      method: 'POST',
+      credentials: 'include'
+    });
+    if (res.ok) {
+      window.location.href = 'login.html';
+    } else {
+      alert("Logout failed.");
+    }
+  } catch (err) {
+    alert("Logout error: " + err.message);
+  }
+});

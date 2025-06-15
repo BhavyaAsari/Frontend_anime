@@ -1,244 +1,190 @@
-// import { BASE_URL } from './config';
+// import { BASE_URL } from './config'; // ✅ Uncomment and use this
+// // Remove the hardcoded BASE_URL line below
+ const BASE_URL = 'https://animehub-server.onrender.com';
 
-// console.log('BAse:',BASE_URL);
-const BASE_URL = 'https://animehub-server.onrender.com';
+// Toast functions
+function showSuccessToast(message = "Profile updated successfully!") {
+  document.getElementById('successToastBody').textContent = message;
+  const toast = new bootstrap.Toast(document.getElementById('successToast'));
+  toast.show();
+}
 
+function showErrorToast(message = "An error occurred!") {
+  document.getElementById('errorToastBody').textContent = message;
+  const toast = new bootstrap.Toast(document.getElementById('errorToast'));
+  toast.show();
+}
 
-
-    // Toast functions
-    function showSuccessToast(message = "Profile updated successfully!") {
-      document.getElementById('successToastBody').textContent = message;
-      const toast = new bootstrap.Toast(document.getElementById('successToast'));
-      toast.show();
-    }
-
-    function showErrorToast(message = "Failed to update profile!") {
-      document.getElementById('errorToastBody').textContent = message;
-      const toast = new bootstrap.Toast(document.getElementById('errorToast'));
-      toast.show();
-    }
-
-    // Hide edit profile section
-    function hideEditProfile() {
-      document.getElementById("editProfileSection").style.display = "none";
-    }
-
-    // Show edit profile section
-    function showEditProfile() {
-      document.getElementById("editProfileSection").style.display = "block";
-      document.getElementById("editProfileSection").scrollIntoView({ behavior: "smooth" });
-    }
-
-    async function fetchUserProfile() {
-      try {
-        const res = await fetch(`${BASE_URL}/api/auth/profile`, {
-          credentials: "include",
-        });
-
-        if (res.ok) {
-          const user = await res.json();
-          console.log("User data:", user); // Debug log
-
-          // Update welcome message and static profile card
-          document.getElementById("welcomeMessage").textContent = `Welcome, ${user.username}!`;
-          document.querySelector(".profile-card #username").textContent = user.username;
-          document.getElementById("userEmail").textContent = user.email || "Not provided";
-          document.getElementById("reviewsPosted").textContent = user.reviewsPosted || 0;
-
-          if (user.joinedAt) {
-            const joinedDate = new Date(user.joinedAt);
-            document.getElementById("joinedAt").textContent = joinedDate.toDateString();
-          } else {
-            document.getElementById("joinedAt").textContent = "Unknown";
-          }
-
-          // Prefill the profile edit form inputs
-          document.getElementById("usernameInput").value = user.username;
-          document.getElementById("emailInput").value = user.email || "";
-
-          // Set profile picture if user has one
-          if (user.profilePicture) {
-            // Check if it's already a full URL (Cloudinary) or a relative path
-            const profilePicUrl = user.profilePicture.startsWith('http') 
-              ? user.profilePicture 
-              : `${BASE_URL}/${user.profilePicture}`;
-              
-            document.getElementById("profilePicDisplay").src = profilePicUrl;
-            document.getElementById("profilePicPreview").src = profilePicUrl;
-          } else {
-            // Keep placeholder
-            document.getElementById("profilePicDisplay").src = "https://via.placeholder.com/150?text=Profile+Pic";
-            document.getElementById("profilePicPreview").src = "https://via.placeholder.com/150?text=Profile+Pic";
-          }
-        } else {
-          console.error("Profile fetch failed:", res.status);
-          showErrorToast("Failed to load profile data");
-          // Optional redirect on unauthorized:
-          // window.location.href = 'login.html';
-        }
-      } catch (err) {
-        console.error("Fetch failed:", err);
-        showErrorToast("Network error while loading profile");
-        // Optional redirect on network error:
-        // window.location.href = 'login.html';
-      }
-    }
-
-    fetchUserProfile();
-
-    // Logout logic
-    document.getElementById("logoutBtn").addEventListener("click", async () => {
-      try {
-        const res = await fetch(  `${BASE_URL}/api/auth/logout`, {
-          method: "POST",
-          credentials: "include",
-        });
-        if (res.ok) {
-          window.location.href = "login.html";
-        } else {
-          showErrorToast("Logout failed with status " + res.status);
-        }
-      } catch (err) {
-        showErrorToast("Logout failed: " + err.message);
-      }
+// Check authentication on page load
+async function checkAuth() {
+  try {
+    const response = await fetch(`${BASE_URL}/api/auth/me`, {
+      method: 'GET',
+      credentials: 'include'
     });
 
-    // Profile picture preview update
-    const profilePicInput = document.getElementById("profilePicInput");
-    const profilePicPreview = document.getElementById("profilePicPreview");
+    if (!response.ok) {
+      if (response.status === 401) {
+        window.location.href = 'login.html';
+        return;
+      }
+      throw new Error('Authentication check failed');
+    }
 
-    profilePicInput.addEventListener("change", (event) => {
-      const file = event.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        profilePicPreview.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
+    const userData = await response.json();
+    console.log('User data:', userData);
+    return userData;
+  } catch (error) {
+    console.error('Auth check error:', error);
+    window.location.href = 'login.html';
+  }
+}
+
+// ✅ Fixed fetchUserProfile function
+async function fetchUserProfile() {
+  try {
+    const response = await fetch(`${BASE_URL}/api/auth/me`, {
+      method: 'GET',
+      credentials: 'include'
     });
 
-    // Upload profile picture separately
-    document.getElementById("uploadPicBtn").addEventListener("click", async () => {
-      const fileInput = document.getElementById("profilePicInput");
-      const file = fileInput.files[0];
+    if (!response.ok) throw new Error('Failed to fetch profile');
+
+    const user = await response.json();
+    console.log('Profile data:', user);
+
+    // Populate form fields
+    document.getElementById('username').value = user.username || '';
+    document.getElementById('email').value = user.email || '';
+
+    // ✅ Fixed profile picture URL handling
+    if (user.profilePicture) {
+      const profilePicUrl = user.profilePicture.startsWith('http') 
+        ? user.profilePicture 
+        : `${BASE_URL}/${user.profilePicture}`;
       
-      if (!file) {
-        showErrorToast("Please select a picture first!");
-        return;
-      }
+      document.getElementById('currentProfilePic').src = profilePicUrl;
+      document.getElementById('currentProfilePic').style.display = 'block';
+      document.getElementById('profilePicPlaceholder').style.display = 'none';
+    } else {
+      document.getElementById('currentProfilePic').style.display = 'none';
+      document.getElementById('profilePicPlaceholder').style.display = 'block';
+    }
 
-      const uploadBtn = document.getElementById("uploadPicBtn");
-      const spinner = document.getElementById("uploadSpinner");
-      uploadBtn.disabled = true;
-      spinner.classList.remove("d-none");
+  } catch (error) {
+    console.error('Error fetching profile:', error);
+    showErrorToast('Failed to load profile data');
+  }
+}
 
-      try {
-        const formData = new FormData();
-        formData.append("profilePicture", file);
-
-        const res = await fetch(`${BASE_URL}/api/auth/upload-profile-pic`, {
-          method: "POST",
-          credentials: "include",
-          body: formData,
-        });
-
-        if (res.ok) {
-          const result = await res.json();
-          showSuccessToast("Profile picture uploaded successfully!");
-          
-          // Update the display image - handle both relative and absolute URLs
-          const profilePicUrl = result.profilePicture.startsWith('http') 
-            ? result.profilePicture 
-            : `${BASE_URL}/${result.profilePicture}`;
-            
-          document.getElementById("profilePicDisplay").src = profilePicUrl;
-          document.getElementById("profilePicPreview").src = profilePicUrl;
-          
-          // Clear the file input
-          fileInput.value = "";
-        } else {
-          const error = await res.json();
-          showErrorToast("Failed to upload picture: " + error.error);
-        }
-      } catch (err) {
-        showErrorToast("Error uploading picture: " + err.message);
-      } finally {
-        uploadBtn.disabled = false;
-        spinner.classList.add("d-none");
-      }
+// Delete profile picture
+async function deleteProfilePicture() {
+  try {
+    const response = await fetch(`${BASE_URL}/api/auth/profile-picture`, {
+      method: 'DELETE',
+      credentials: 'include'
     });
 
-    // Delete profile picture
-    document.getElementById("deletePicBtn").addEventListener("click", async () => {
-      if (!confirm("Are you sure you want to delete your profile picture?")) {
-        return;
-      }
+    if (!response.ok) throw new Error('Failed to delete profile picture');
 
-      try {
-        const res = await fetch(`${BASE_URL}/api/auth/delete-profile-pic`, {
-          method: "DELETE",
-          credentials: "include",
-        });
+    // Hide current image and show placeholder
+    document.getElementById('currentProfilePic').style.display = 'none';
+    document.getElementById('profilePicPlaceholder').style.display = 'block';
+    
+    showSuccessToast('Profile picture deleted successfully!');
+  } catch (error) {
+    console.error('Error deleting profile picture:', error);
+    showErrorToast('Failed to delete profile picture');
+  }
+}
 
-        if (res.ok) {
-          showSuccessToast("Profile picture deleted successfully!");
-          
-          // Reset to placeholder
-          document.getElementById("profilePicDisplay").src = "https://via.placeholder.com/150?text=Profile+Pic";
-          document.getElementById("profilePicPreview").src = "https://via.placeholder.com/150?text=Profile+Pic";
-        } else {
-          const error = await res.json();
-          showErrorToast("Failed to delete picture: " + error.error);
-        }
-      } catch (err) {
-        showErrorToast("Error deleting picture: " + err.message);
-      }
+// Profile form submission
+document.getElementById('profileForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const formData = new FormData();
+  const username = document.getElementById('username').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const profilePictureFile = document.getElementById('profilePicture').files[0];
+
+  if (!username || !email) {
+    showErrorToast('Username and email are required');
+    return;
+  }
+
+  formData.append('username', username);
+  formData.append('email', email);
+
+  if (profilePictureFile) {
+    // Validate file size (5MB limit)
+    if (profilePictureFile.size > 5 * 1024 * 1024) {
+      showErrorToast('Profile picture must be less than 5MB');
+      return;
+    }
+    formData.append('profilePicture', profilePictureFile);
+  }
+
+  try {
+    const response = await fetch(`${BASE_URL}/api/auth/profile`, {
+      method: 'PUT',
+      body: formData,
+      credentials: 'include'
     });
 
-    // Handle profile form submission (username and email only)
-    document.getElementById("profileForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to update profile');
+    }
 
-      const saveBtn = document.getElementById("saveProfileBtn");
-      const spinner = document.getElementById("saveSpinner");
-      saveBtn.disabled = true;
-      spinner.classList.remove("d-none");
+    const result = await response.json();
+    console.log('Update result:', result);
 
-      try {
-        const username = document.getElementById("usernameInput").value;
-        const email = document.getElementById("emailInput").value;
+    // ✅ Fixed profile picture display after upload
+    if (result.user && result.user.profilePicture) {
+      const profilePicUrl = result.user.profilePicture.startsWith('http') 
+        ? result.user.profilePicture 
+        : `${BASE_URL}/${result.user.profilePicture}`;
+      
+      document.getElementById('currentProfilePic').src = profilePicUrl;
+      document.getElementById('currentProfilePic').style.display = 'block';
+      document.getElementById('profilePicPlaceholder').style.display = 'none';
+    }
 
-        const res = await fetch(`${BASE_URL}/api/auth/update-profile`, {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ username, email }),
-        });
+    showSuccessToast('Profile updated successfully!');
+    
+    // Clear the file input
+    document.getElementById('profilePicture').value = '';
 
-        if (res.ok) {
-          showSuccessToast("Profile updated successfully!");
-          hideEditProfile();
-          await fetchUserProfile();
-        } else {
-          const text = await res.text();
-          showErrorToast("Failed to update profile: " + text);
-        }
-      } catch (err) {
-        showErrorToast("Error updating profile: " + err.message);
-      } finally {
-        saveBtn.disabled = false;
-        spinner.classList.add("d-none");
-      }
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    showErrorToast(error.message || 'Failed to update profile');
+  }
+});
+
+// Add event listener for delete button
+document.getElementById('deleteProfilePicBtn').addEventListener('click', deleteProfilePicture);
+
+// Logout functionality
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  try {
+    const response = await fetch(`${BASE_URL}/api/auth/logout`, {
+      method: 'POST',
+      credentials: 'include'
     });
 
-    // Toggle Edit Profile jumbotron visibility on "Change Profile" click
-    document.getElementById("editProfileBtn").addEventListener("click", () => {
-      const editProfileSection = document.getElementById("editProfileSection");
-      if (editProfileSection.style.display === "none" || editProfileSection.style.display === "") {
-        showEditProfile();
-      } else {
-        hideEditProfile();
-      }
-    });
+    if (response.ok) {
+      window.location.href = 'login.html';
+    } else {
+      showErrorToast('Logout failed');
+    }
+  } catch (error) {
+    console.error('Logout error:', error);
+    showErrorToast('Logout failed');
+  }
+});
+
+// Load profile data when page loads
+document.addEventListener('DOMContentLoaded', async () => {
+  await checkAuth();
+  await fetchUserProfile();
+});
