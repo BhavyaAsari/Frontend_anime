@@ -79,7 +79,7 @@ function createReviewCard(review, container) {
 const imageUrl = review.animeImageUrl?.trim()
   ? (review.animeImageUrl.startsWith('http') 
       ? review.animeImageUrl 
-      : `${BASE_URL}/${review.animeImageUrl}`)
+      : `${BASE_URL}${review.animeImageUrl}`)
   : null;
 
 const imageHtml = imageUrl

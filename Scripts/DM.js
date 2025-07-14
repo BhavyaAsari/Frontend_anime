@@ -557,23 +557,36 @@ async function init() {
   const storedChat = localStorage.getItem('selectedChat');
   if (storedChat) {
     try {
-      const { chatId: storedChatId, receiverId: storedReceiverId, receiverUsername, receiverProfile } = JSON.parse(storedChat);
+      const {
+        chatId: storedChatId,
+        receiverId: storedReceiverId,
+        receiverUsername,
+        receiverProfile
+      } = JSON.parse(storedChat);
 
-      chatId = storedChatId;
-      receiverId = storedReceiverId;
-      chatTitle.textContent = `Chat with ${receiverUsername}`;
-      messages.length = 0;
-      renderMessages();
-      chatForm.style.display = 'flex';
+      // Validate chatId is a valid MongoDB ObjectId length (24 characters)
+      if (storedChatId && storedChatId.length === 24 && /^[a-f\d]{24}$/i.test(storedChatId)) {
+        console.log('Restoring valid chatId:', storedChatId);
+        chatId = storedChatId;
+        receiverId = storedReceiverId;
+        chatTitle.textContent = `Chat with ${receiverUsername}`;
+        messages.length = 0;
+        renderMessages();
+        chatForm.style.display = 'flex';
 
-      socket.emit('joinChat', chatId);
-      await loadMessages(chatId);
-
+        socket.emit('joinChat', chatId);
+        await loadMessages(chatId);
+      } else {
+        console.warn('Invalid chatId found in localStorage. Clearing...');
+        localStorage.removeItem('selectedChat');
+      }
     } catch (err) {
       console.error('Failed to restore chat from localStorage:', err);
+      localStorage.removeItem('selectedChat');
     }
   }
 }
+
 
 // Start the app
 init();

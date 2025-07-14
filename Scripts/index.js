@@ -29,8 +29,7 @@ async function checkAuth() {
       throw new Error('Authentication check failed');
     }
 
-    const userData = await response.json();
-    return userData;
+    return await response.json();
   } catch (error) {
     console.error('Auth check error:', error);
     window.location.href = 'login.html';
@@ -49,7 +48,6 @@ async function fetchUserProfile() {
 
     const user = await response.json();
 
-    // Update display
     document.getElementById('username').textContent = user.username || '';
     document.getElementById('userEmail').textContent = user.email || '';
     document.getElementById('usernameInput').value = user.username || '';
@@ -65,7 +63,6 @@ async function fetchUserProfile() {
       document.getElementById('profilePicDisplay').src = profilePicUrl;
       document.getElementById('profilePicPreview').src = profilePicUrl;
     }
-
   } catch (error) {
     console.error('Error fetching profile:', error);
     showErrorToast('Failed to load profile data');
@@ -75,7 +72,7 @@ async function fetchUserProfile() {
 // Delete profile picture
 async function deleteProfilePicture() {
   try {
-    const response = await fetch(`${BASE_URL}/api/auth/profile-picture`, {
+    const response = await fetch(`${BASE_URL}/api/auth/delete-profile-pic`, {
       method: 'DELETE',
       credentials: 'include'
     });
@@ -96,7 +93,6 @@ async function deleteProfilePicture() {
 document.getElementById('profileForm').addEventListener('submit', async (e) => {
   e.preventDefault();
 
-  const formData = new FormData();
   const username = document.getElementById('usernameInput').value.trim();
   const email = document.getElementById('emailInput').value.trim();
   const profilePictureFile = document.getElementById('profilePicInput').files[0];
@@ -106,41 +102,51 @@ document.getElementById('profileForm').addEventListener('submit', async (e) => {
     return;
   }
 
-  formData.append('username', username);
-  formData.append('email', email);
-
-  if (profilePictureFile) {
-    if (profilePictureFile.size > 5 * 1024 * 1024) {
-      showErrorToast('Profile picture must be less than 5MB');
-      return;
-    }
-    formData.append('profilePicture', profilePictureFile);
-  }
-
   try {
-    const response = await fetch(`${BASE_URL}/api/auth/profile`, {
-      method: 'PUT',
-      body: formData,
-      credentials: 'include'
+    // Update username & email
+    const updateResponse = await fetch(`${BASE_URL}/api/auth/update-profile`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        username,
+        email
+      }),
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
+    if (!updateResponse.ok) {
+      const errorData = await updateResponse.json();
       throw new Error(errorData.message || 'Failed to update profile');
     }
 
-    const result = await response.json();
+    // Upload profile picture if exists
+    if (profilePictureFile) {
+      if (profilePictureFile.size > 5 * 1024 * 1024) {
+        showErrorToast('Profile picture must be less than 5MB');
+        return;
+      }
 
-    if (result.user && result.user.profilePicture) {
-      const profilePicUrl = result.user.profilePicture.startsWith('http')
-        ? result.user.profilePicture
-        : `${BASE_URL}/${result.user.profilePicture}`;
-      document.getElementById('profilePicDisplay').src = profilePicUrl;
-      document.getElementById('profilePicPreview').src = profilePicUrl;
+      const formData = new FormData();
+      formData.append('profilePicture', profilePictureFile);
+
+      const picResponse = await fetch(`${BASE_URL}/api/auth/upload-profile-pic`, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+      });
+
+      if (!picResponse.ok) {
+        const errorData = await picResponse.json();
+        throw new Error(errorData.message || 'Failed to upload profile picture');
+      }
     }
 
+    await fetchUserProfile(); // Refresh profile UI
     showSuccessToast('Profile updated successfully!');
     document.getElementById('profilePicInput').value = '';
+
   } catch (error) {
     console.error('Error updating profile:', error);
     showErrorToast(error.message || 'Failed to update profile');
@@ -166,10 +172,8 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
   }
 });
 
-// Handle delete profile picture button
 document.getElementById('deletePicBtn').addEventListener('click', deleteProfilePicture);
 
-// Toggle profile edit view
 document.getElementById('editProfileBtn').addEventListener('click', () => {
   document.getElementById('editProfileSection').style.display = 'block';
 });
