@@ -384,6 +384,7 @@ function addImageUploadButton() {
 }
 
 // ✅ Updated message sending with new response format
+
 async function sendMessage(content = '', imageFile = null) {
   if ((!content.trim() && !imageFile) || !chatId || !currentUser) return;
 
@@ -397,35 +398,31 @@ async function sendMessage(content = '', imageFile = null) {
   messageInput.disabled = true;
 
   try {
-    let res, savedMsg;
+    // ✅ FIXED: Use the same endpoint for both text and image messages
+    const formData = new FormData();
+    formData.append('chat', chatId);
+    formData.append('chatModel', 'DirectMessage');
     
     if (imageFile) {
-      // Handle image upload
-      const formData = new FormData();
-      formData.append('chat', chatId);
-      formData.append('chatModel', 'DirectMessage');
       formData.append('image', imageFile);
-      if (content.trim()) {
-        formData.append('content', content.trim());
-      }
-
-      res = await fetch(`${BASE_URL}/api/messages`, {
-        method: 'POST',
-        credentials: 'include',
-        body: formData,
-      });
-    } else {
-      // Handle text message
-      res = await fetch(`${BASE_URL}/api/one-on-one/${chatId}/messages`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ content: content.trim() }),
-      });
+    }
+    
+    if (content.trim()) {
+      formData.append('content', content.trim());
     }
 
-    savedMsg = await handleApiResponse(res);
+    console.log('Sending message to chat:', chatId);
+
+    const res = await fetch(`${BASE_URL}/api/messages`, {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+    });
+
+    const savedMsg = await handleApiResponse(res);
     if (!savedMsg) return;
+
+    console.log('Message sent successfully:', savedMsg);
 
     // Add message to local array
     const newMessage = {
@@ -458,7 +455,7 @@ async function sendMessage(content = '', imageFile = null) {
 
   } catch (err) {
     console.error('Error sending message:', err);
-    alert('Failed to send message. Please try again.');
+    alert('Failed to send message: ' + err.message);
   } finally {
     // Re-enable form
     if (submitBtn) {
@@ -469,7 +466,6 @@ async function sendMessage(content = '', imageFile = null) {
     messageInput.focus();
   }
 }
-
 // ✅ Handle image selection
 imageInput.addEventListener('change', async (e) => {
   const file = e.target.files[0];
