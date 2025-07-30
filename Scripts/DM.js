@@ -231,7 +231,7 @@ async function loadChatList() {
 // ✅ Updated message loading with new response format
 async function loadMessages(chatId) {
   try {
-    const res = await fetch(`${BASE_URL}/api/one-on-one/${chatId}/messages`, {
+    const res = await fetch(`${BASE_URL}/api/messages/chat/${chatId}`, {
       credentials: 'include'
     });
     
