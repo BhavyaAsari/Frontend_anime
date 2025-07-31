@@ -383,8 +383,8 @@ function addImageUploadButton() {
   }
 }
 
-// ✅ Updated message sending with new response format
 
+// ✅ FINAL FIXED VERSION - Replace your sendMessage function with this
 async function sendMessage(content = '', imageFile = null) {
   if ((!content.trim() && !imageFile) || !chatId || !currentUser) return;
 
@@ -398,26 +398,38 @@ async function sendMessage(content = '', imageFile = null) {
   messageInput.disabled = true;
 
   try {
-    // ✅ FIXED: Use the same endpoint for both text and image messages
+    // ✅ CORRECTED: Match exactly what your MessageRoute.js expects
     const formData = new FormData();
-    formData.append('chat', chatId);
-    formData.append('chatModel', 'DirectMessage');
+    formData.append('chat', chatId);           // ✅ MessageRoute expects 'chat'
+    // ❌ REMOVED: Don't send 'chatModel' - it's not needed
     
     if (imageFile) {
-      formData.append('image', imageFile);
+      formData.append('image', imageFile);     // ✅ MessageRoute expects 'image'
     }
     
     if (content.trim()) {
-      formData.append('content', content.trim());
+      formData.append('content', content.trim()); // ✅ MessageRoute expects 'content'
     }
 
     console.log('Sending message to chat:', chatId);
+    console.log('FormData fields:', {
+      chat: chatId,
+      hasImage: !!imageFile,
+      hasContent: !!content.trim()
+    });
 
     const res = await fetch(`${BASE_URL}/api/messages`, {
       method: 'POST',
       credentials: 'include',
       body: formData,
+      // ✅ Let browser set Content-Type for FormData
     });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error('Server response:', res.status, errorText);
+      throw new Error(`Server error: ${res.status} - ${errorText}`);
+    }
 
     const savedMsg = await handleApiResponse(res);
     if (!savedMsg) return;
@@ -466,6 +478,7 @@ async function sendMessage(content = '', imageFile = null) {
     messageInput.focus();
   }
 }
+
 // ✅ Handle image selection
 imageInput.addEventListener('change', async (e) => {
   const file = e.target.files[0];
