@@ -1,4 +1,10 @@
-import { BASE_URL } from './config.js';
+// import { BASE_URL } from './config.js';
+
+// import { BASE_URL } from './config';
+
+import { BASE_URL } from '../Scripts/config.js';
+
+
 
 document.getElementById('reviewForm').addEventListener('submit', async (e) => {
   e.preventDefault();

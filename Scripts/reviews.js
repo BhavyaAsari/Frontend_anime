@@ -1,4 +1,7 @@
-import { BASE_URL } from './config.js';
+// import { BASE_URL } from './config.js';
+
+import { BASE_URL } from '../Scripts/config.js';
+
 
 let allReviews = [];
 const reviewFullTextMap = {}; // Stores full review text safely
@@ -43,7 +46,6 @@ async function fetchReviews() {
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
 
     allReviews = await res.json();
-    console.log('Fetched reviews:', allReviews.length);
     displayReviews(allReviews);
   } catch (err) {
     console.error("Failed to fetch reviews:", err);
@@ -138,7 +140,6 @@ const imageHtml = imageUrl
 
 // Toggle specific review text - FIXED VERSION
 function toggleSpecificReview(reviewId) {
-  console.log('toggleSpecificReview called for:', reviewId);
   
   // Get the specific elements using unique IDs
   const textElement = document.getElementById(`review-text-${reviewId}`);
@@ -156,20 +157,17 @@ function toggleSpecificReview(reviewId) {
   }
 
   const isCurrentlyExpanded = expandedReviews.has(reviewId);
-  console.log('Current state for', reviewId, '- isExpanded:', isCurrentlyExpanded);
   
   if (isCurrentlyExpanded) {
     // Collapse: Show truncated text
     textElement.innerHTML = escapeHtml(truncate(fullText, 120));
     buttonElement.textContent = 'Read More';
     expandedReviews.delete(reviewId);
-    console.log('Collapsed review:', reviewId);
   } else {
     // Expand: Show full text
     textElement.innerHTML = escapeHtml(fullText);
     buttonElement.textContent = 'Read Less';
     expandedReviews.add(reviewId);
-    console.log('Expanded review:', reviewId);
   }
 }
 
@@ -197,7 +195,6 @@ function filterReviews() {
     }
   });
 
-  console.log('Filtering reviews, found:', filtered.length);
   displayReviews(filtered);
 }
 
@@ -260,7 +257,7 @@ function showError(message) {
 }
 
 // Auto-refresh reviews every 5 minutes (changed from 30000000 to 300000)
-setInterval(fetchReviews, 300000);
+setInterval(fetchReviews, 259200000);
 window.handleImageError = handleImageError;
 window.toggleSpecificReview = toggleSpecificReview;
 

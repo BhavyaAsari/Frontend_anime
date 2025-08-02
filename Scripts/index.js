@@ -1,4 +1,7 @@
-const BASE_URL = 'https://animehub-server.onrender.com';
+// const BASE_URL = 'http://localhost:3000';
+
+import { BASE_URL } from '../Scripts/config.js';
+
 
 // Toast functions
 function showSuccessToast(message = "Profile updated successfully!") {

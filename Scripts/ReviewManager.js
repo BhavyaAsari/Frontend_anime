@@ -1,6 +1,7 @@
-import { BASE_URL } from './config'; // ✅ Add this import at the top
+// import { BASE_URL } from './config'; // ✅ Add this import at the top
 
-console.log(BASE_URL); 
+import { BASE_URL } from '../Scripts/config.js';
+
 
 let reviews = [];
 const reviewsContainer = document.getElementById("reviewsContainer");
@@ -12,7 +13,6 @@ async function fetchReviews() {
       credentials: "include"
     });
     reviews = await res.json();
-     console.log("Fetched reviews data:", reviews);
     renderReviews();
   } catch (err) {
     console.error('Error fetching reviews:', err);
