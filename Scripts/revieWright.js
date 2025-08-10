@@ -35,6 +35,9 @@ document.getElementById('reviewForm').addEventListener('submit', async (e) => {
       toast.show();
       
       form.reset();
+
+     
+
     } else if (res.status === 401) {
       alert("You must be logged in to submit a review.");
       // window.location.href = 'login.html';

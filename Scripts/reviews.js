@@ -256,7 +256,7 @@ function showError(message) {
     </div>`;
 }
 
-// Auto-refresh reviews every 5 minutes (changed from 30000000 to 300000)
+// Auto-refresh reviews
 setInterval(fetchReviews, 259200000);
 window.handleImageError = handleImageError;
 window.toggleSpecificReview = toggleSpecificReview;

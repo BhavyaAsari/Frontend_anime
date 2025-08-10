@@ -59,6 +59,7 @@ async function fetchUserProfile() {
     document.getElementById('joinedAt').textContent = new Date(user.createdAt).toLocaleDateString();
     document.getElementById('welcomeMessage').textContent = `Welcome, ${user.username}!`;
 
+
     if (user.profilePicture) {
       const profilePicUrl = user.profilePicture.startsWith('http')
         ? user.profilePicture

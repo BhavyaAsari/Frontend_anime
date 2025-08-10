@@ -1,5 +1,7 @@
 import { BASE_URL } from './config.js';
 
+console.log(BASE_URL);
+
 // Get current user info from session
 let currentUser = null;
 let receiverId = null;
