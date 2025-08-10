@@ -1,7 +1,5 @@
 // const BASE_URL = 'http://localhost:3000';
-
 import { BASE_URL } from '../Scripts/config.js';
-
 
 // Toast functions
 function showSuccessToast(message = "Profile updated successfully!") {
@@ -42,7 +40,7 @@ async function checkAuth() {
 // Fetch and display user profile
 async function fetchUserProfile() {
   try {
-    const response = await fetch(`${BASE_URL}/api/auth/me`, {
+    const response = await fetch(`${BASE_URL}/api/auth/profile`, {
       method: 'GET',
       credentials: 'include'
     });
@@ -55,10 +53,9 @@ async function fetchUserProfile() {
     document.getElementById('userEmail').textContent = user.email || '';
     document.getElementById('usernameInput').value = user.username || '';
     document.getElementById('emailInput').value = user.email || '';
-    document.getElementById('reviewsPosted').textContent = user.reviewsCount || '0';
-    document.getElementById('joinedAt').textContent = new Date(user.createdAt).toLocaleDateString();
+    document.getElementById('reviewsPosted').textContent = user.reviewsPosted || '0';
+    document.getElementById('joinedAt').textContent = new Date(user.joinedAt).toLocaleDateString();
     document.getElementById('welcomeMessage').textContent = `Welcome, ${user.username}!`;
-
 
     if (user.profilePicture) {
       const profilePicUrl = user.profilePicture.startsWith('http')
@@ -71,6 +68,40 @@ async function fetchUserProfile() {
     console.error('Error fetching profile:', error);
     showErrorToast('Failed to load profile data');
   }
+}
+
+// Compress image before upload
+function compressImage(file, maxWidth = 500, quality = 0.8) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth) {
+          height = Math.floor((maxWidth / width) * height);
+          width = maxWidth;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          (blob) => resolve(new File([blob], file.name, { type: 'image/jpeg' })),
+          'image/jpeg',
+          quality
+        );
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
 // Delete profile picture
@@ -99,7 +130,7 @@ document.getElementById('profileForm').addEventListener('submit', async (e) => {
 
   const username = document.getElementById('usernameInput').value.trim();
   const email = document.getElementById('emailInput').value.trim();
-  const profilePictureFile = document.getElementById('profilePicInput').files[0];
+  let profilePictureFile = document.getElementById('profilePicInput').files[0];
 
   if (!username || !email) {
     showErrorToast('Username and email are required');
@@ -107,23 +138,17 @@ document.getElementById('profileForm').addEventListener('submit', async (e) => {
   }
 
   try {
-    // Update username & email
-    const updateResponse = await fetch(`${BASE_URL}/api/auth/update-profile`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        username,
-        email
-      }),
-    });
+    const requests = [];
 
-    if (!updateResponse.ok) {
-      const errorData = await updateResponse.json();
-      throw new Error(errorData.message || 'Failed to update profile');
-    }
+    // Update username & email
+    requests.push(
+      fetch(`${BASE_URL}/api/auth/update-profile`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, email }),
+      })
+    );
 
     // Upload profile picture if exists
     if (profilePictureFile) {
@@ -132,22 +157,38 @@ document.getElementById('profileForm').addEventListener('submit', async (e) => {
         return;
       }
 
+      // Compress before upload
+      profilePictureFile = await compressImage(profilePictureFile);
+
       const formData = new FormData();
       formData.append('profilePicture', profilePictureFile);
 
-      const picResponse = await fetch(`${BASE_URL}/api/auth/upload-profile-pic`, {
-        method: 'POST',
-        credentials: 'include',
-        body: formData
-      });
+      requests.push(
+        fetch(`${BASE_URL}/api/auth/upload-profile-pic`, {
+          method: 'POST',
+          credentials: 'include',
+          body: formData
+        })
+      );
 
-      if (!picResponse.ok) {
-        const errorData = await picResponse.json();
-        throw new Error(errorData.message || 'Failed to upload profile picture');
+      // Show preview immediately
+      const previewUrl = URL.createObjectURL(profilePictureFile);
+      document.getElementById('profilePicDisplay').src = previewUrl;
+      document.getElementById('profilePicPreview').src = previewUrl;
+    }
+
+    // Run requests in parallel
+    const responses = await Promise.all(requests);
+
+    // Check for any failures
+    for (const res of responses) {
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.message || 'Profile update failed');
       }
     }
 
-    await fetchUserProfile(); // Refresh profile UI
+    await fetchUserProfile(); // Refresh UI from server
     showSuccessToast('Profile updated successfully!');
     document.getElementById('profilePicInput').value = '';
 
